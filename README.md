@@ -7,7 +7,6 @@ A modern React application for managing class scheduling with role-based access 
 ### Authentication
 - ✅ User registration with name, email, password, and role selection
 - ✅ User login with email and password
-- ✅ Secure authentication with browser localStorage
 - ✅ Role-based access control (Teacher/Student)
 - ✅ Logout functionality
 
@@ -36,7 +35,6 @@ A modern React application for managing class scheduling with role-based access 
 - ✅ Mobile-responsive design
 
 ### Data Management
-- ✅ Persistent authentication with localStorage
 - ✅ Email normalization (lowercase, trimmed)
 - ✅ Real-time slot availability updates
 - ✅ Automatic data refresh after operations
@@ -192,7 +190,6 @@ This can be configured in `vite.config.js` via the `VITE_API_BASE_URL` environme
 - ✅ Role-based access control
 - ✅ CORS enabled for API communication
 - ✅ XSS protection via React's built-in escaping
-- ✅ localStorage for auth state (secure for this use case)
 
 ---
 
@@ -222,7 +219,6 @@ npm run dev -- --port 3001
 - Check browser console for API errors
 - Verify backend server is running
 - Try logging out and back in
-- Clear localStorage: `localStorage.clear()`
 
 ### Form Validation Errors
 - Ensure date/time are in the future (for slot creation)
@@ -330,8 +326,7 @@ For more detailed information, see:
 1. **Quick Test**: Register two accounts (one teacher, one student) and test the complete flow
 2. **Check Console**: Browser DevTools console shows helpful debug messages
 3. **Check Network**: DevTools Network tab shows all API requests
-4. **Check Storage**: DevTools Application > Storage > localStorage shows auth token
-5. **Database**: Use MongoDB Compass to view database contents while testing
+4. **Database**: Use MongoDB Compass to view database contents while testing
 
 ---
 
@@ -342,4 +337,4 @@ For issues or questions:
 2. Review browser console for error messages
 3. Verify backend server is running
 4. Check that all dependencies are installed (`npm install`)
-5. Clear browser cache/localStorage if experiencing issues
+5. Clear browser cache if experiencing issues
