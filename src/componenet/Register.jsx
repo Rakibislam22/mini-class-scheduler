@@ -15,6 +15,7 @@ const Register = () => {
         role: 'student',
     });
     const [message, setMessage] = useState({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+    const [isLoading, setIsLoading] = useState(false);
 
     if (existingAuth) {
         return <Navigate to={getDashboardPath(existingAuth.role)} replace />;
@@ -38,6 +39,7 @@ const Register = () => {
             return;
         }
 
+        setIsLoading(true);
         try {
             const res = await fetch(`${API_BASE}/api/register`, {
                 method: 'POST',
@@ -53,6 +55,7 @@ const Register = () => {
             const payload = await res.json();
             if (!res.ok || !payload?.success) {
                 setMessage({ type: 'error', text: payload?.message || 'Registration failed.' });
+                setIsLoading(false);
                 return;
             }
 
@@ -60,6 +63,8 @@ const Register = () => {
             navigate(getDashboardPath(payload.user.role));
         } catch (err) {
             setMessage({ type: 'error', text: 'Registration failed.' });
+            setIsLoading(false);
+            console.error(err.message);
         }
     };
 
@@ -151,9 +156,10 @@ const Register = () => {
 
                         <button
                             type="submit"
-                            className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
+                            disabled={isLoading}
+                            className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:bg-cyan-400/50 disabled:cursor-not-allowed"
                         >
-                            Register
+                            {isLoading ? 'Registering...' : 'Register'}
                         </button>
                     </form>
 

@@ -1,7 +1,9 @@
 import { Link } from 'react-router';
+import { useState } from 'react';
 import { ROLES } from './lib/appState';
 
 const Landing = () => {
+    const [loadingLink, setLoadingLink] = useState(null);
     return (
         <main className="min-h-screen px-4 py-6 text-slate-100 sm:px-6 lg:px-8 lg:py-8">
             <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -24,15 +26,17 @@ const Landing = () => {
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <Link
                                     to="/login"
-                                    className="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-300"
+                                    onClick={() => setLoadingLink('login')}
+                                    className="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:bg-emerald-400/50 disabled:cursor-not-allowed"
                                 >
-                                    Login to dashboard
+                                    {loadingLink === 'login' ? 'Loading...' : 'Login to dashboard'}
                                 </Link>
                                 <Link
                                     to="/register"
+                                    onClick={() => setLoadingLink('register')}
                                     className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
                                 >
-                                    Create account
+                                    {loadingLink === 'register' ? 'Loading...' : 'Create account'}
                                 </Link>
                             </div>
 
