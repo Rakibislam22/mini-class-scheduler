@@ -21,7 +21,7 @@
  * - Two-column layout for both roles (left: primary action, right: reference data)
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import {
     clearStoredAuth,
@@ -100,6 +100,9 @@ const App = () => {
     const [loadingSlotId, setLoadingSlotId] = useState(null); // Loading state for book slot buttons
     const [isLoggingOut, setIsLoggingOut] = useState(false); // Loading state for logout button
 
+    // Calendar ref for handling date selection
+    const calendarRef = useRef(null);
+
     // Auth from browser localStorage
     const auth = getStoredAuth();
     const activeRole = roleParam || auth?.role;
@@ -112,6 +115,29 @@ const App = () => {
             }, 5000);
             return () => clearTimeout(timer);
         }
+    }, [message]);
+
+    // Handle calendar date selection
+    useEffect(() => {
+        const calendar = calendarRef.current;
+        if (!calendar) return;
+
+        const handleDateChange = () => {
+            if (calendar.value) {
+                const date = new Date(calendar.value);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+                setSlotDate(formattedDate);
+                if (message.type === 'error') {
+                    setMessage({ type: 'info', text: 'Add 15-minute slot' });
+                }
+            }
+        };
+
+        calendar.addEventListener('change', handleDateChange);
+        return () => calendar.removeEventListener('change', handleDateChange);
     }, [message]);
 
     /**
@@ -502,20 +528,17 @@ const App = () => {
                                 </div>
 
                                 <form className="mt-6 space-y-4" onSubmit={handleAddSlot}>
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-12 sm:grid-cols-2">
                                         <label className="space-y-2">
                                             <span className="text-sm font-medium text-slate-300">Date</span>
-                                            <input
-                                                type="date"
-                                                value={slotDate}
-                                                onChange={(event) => {
-                                                    setSlotDate(event.target.value);
-                                                    if (message.type === 'error') {
-                                                        setMessage({ type: 'info', text: 'Add 15-minute slot' });
-                                                    }
-                                                }}
-                                                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-emerald-300 focus:bg-white/10"
-                                            />
+                                            <calendar-date
+                                                ref={calendarRef}
+                                                className="cally bg-slate-950 border border-white/10 text-white rounded-2xl shadow-lg"
+                                            >
+                                                <svg aria-label="Previous" className="fill-current size-4 text-white" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
+                                                <svg aria-label="Next" className="fill-current size-4 text-white" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
+                                                <calendar-month></calendar-month>
+                                            </calendar-date>
                                         </label>
                                         <label className="space-y-2">
                                             <span className="text-sm font-medium text-slate-300">Time</span>
