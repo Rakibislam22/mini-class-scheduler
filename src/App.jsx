@@ -496,7 +496,7 @@ const App = () => {
 
                                 <article className="rounded-3xl border border-white/10 bg-white/5 p-4">
                                     <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Total slots</p>
-                                    <p className="mt-2 text-xl font-semibold text-white">{activeRole === 'student' ? sortedBookedSlots.length : totalSlots}</p>
+                                    <p className="mt-2 text-xl font-semibold text-white">{totalSlots}</p>
                                 </article>
                                 <article className="rounded-3xl border border-white/10 bg-white/5 p-4">
                                     <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Available</p>
