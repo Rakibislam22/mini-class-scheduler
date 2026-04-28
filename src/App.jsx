@@ -89,6 +89,8 @@ const App = () => {
     const [loadingSlotId, setLoadingSlotId] = useState(null); // Loading state for book slot buttons
     const [isLoggingOut, setIsLoggingOut] = useState(false); // Loading state for logout button
     const [selectedBookedSlot, setSelectedBookedSlot] = useState(null); // Booked slot shown in the modal
+    const [bookedSlotSortOrder, setBookedSlotSortOrder] = useState('latest'); // Sort order for booked slots
+    const [createdSlotSortOrder, setCreatedSlotSortOrder] = useState('latest'); // Sort order for created slots
 
     // Calendar ref for handling date selection
     const calendarRef = useRef(null);
@@ -229,14 +231,20 @@ const App = () => {
 
     // Student's booked slots sorted by start time
     const sortedBookedSlots = useMemo(
-        () => [...bookedSlots].sort((left, right) => new Date(left.start) - new Date(right.start)),
-        [bookedSlots],
+        () => [...bookedSlots].sort((left, right) => {
+            const comparison = new Date(left.start) - new Date(right.start);
+            return bookedSlotSortOrder === 'latest' ? -comparison : comparison;
+        }),
+        [bookedSlots, bookedSlotSortOrder],
     );
 
     // All slots (teacher's created or all available) sorted by start time
     const sortedSlots = useMemo(
-        () => [...slots].sort((left, right) => new Date(left.start) - new Date(right.start)),
-        [slots],
+        () => [...slots].sort((left, right) => {
+            const comparison = new Date(left.start) - new Date(right.start);
+            return createdSlotSortOrder === 'latest' ? -comparison : comparison;
+        }),
+        [slots, createdSlotSortOrder],
     );
 
     // ==================== AUTHENTICATION GUARDS ====================
@@ -579,9 +587,19 @@ const App = () => {
                             </section>
 
                             <section className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6 shadow-xl shadow-slate-950/30 backdrop-blur">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <h3 className="text-2xl font-semibold text-white">All created slots</h3>
-                                    <span className="text-sm text-slate-400">{sortedSlots.length} total</span>
+                                    <div className="flex items-center gap-3">
+                                        <select
+                                            value={createdSlotSortOrder}
+                                            onChange={(event) => setCreatedSlotSortOrder(event.target.value)}
+                                            className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300 focus:bg-white/10"
+                                        >
+                                            <option value="latest" className="bg-slate-900 text-white">Latest</option>
+                                            <option value="oldest" className="bg-slate-900 text-white">Oldest</option>
+                                        </select>
+                                        <span className="text-sm text-slate-400">{sortedSlots.length} total</span>
+                                    </div>
                                 </div>
 
                                 <div className="mt-6 space-y-3">
@@ -675,14 +693,24 @@ const App = () => {
                             </section>
 
                             <section className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6 shadow-xl shadow-slate-950/30 backdrop-blur">
-                                <div className="flex items-start justify-between gap-4">
+                                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                                     <div>
                                         <h3 className="text-2xl font-semibold text-white">My Booked Slots</h3>
                                         <p className="mt-2 text-sm text-slate-400">Track the openings you have already reserved.</p>
                                     </div>
-                                    <span className="rounded-full bg-slate-200/10 px-3 py-1 text-xs font-semibold text-slate-200">
-                                        {sortedBookedSlots.length} booked
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <select
+                                            value={bookedSlotSortOrder}
+                                            onChange={(event) => setBookedSlotSortOrder(event.target.value)}
+                                            className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300 focus:bg-white/10"
+                                        >
+                                            <option value="latest" className="bg-slate-900 text-white">Latest</option>
+                                            <option value="oldest" className="bg-slate-900 text-white">Oldest</option>
+                                        </select>
+                                        <span className="rounded-full bg-slate-200/10 px-3 py-1 text-xs font-semibold text-slate-200">
+                                            {sortedBookedSlots.length} booked
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="mt-6 space-y-3">
