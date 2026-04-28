@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { ROLES, getDashboardPath, getStoredAuth, isValidRole, storeAuth } from '../lib/appState';
 
@@ -16,6 +16,16 @@ const Register = () => {
     });
     const [message, setMessage] = useState({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
     const [isLoading, setIsLoading] = useState(false);
+
+    // Auto-clear error and success messages after 5 seconds
+    useEffect(() => {
+        if (message.type === 'error' || message.type === 'success') {
+            const timer = setTimeout(() => {
+                setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
     if (existingAuth) {
         return <Navigate to={getDashboardPath(existingAuth.role)} replace />;
@@ -101,7 +111,12 @@ const Register = () => {
                                 type="email"
                                 placeholder="mail@site.com"
                                 value={formData.email}
-                                onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, email: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
@@ -112,7 +127,12 @@ const Register = () => {
                                 type="text"
                                 placeholder="Your name"
                                 value={formData.name}
-                                onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, name: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
@@ -123,7 +143,12 @@ const Register = () => {
                                 type="password"
                                 placeholder="Password"
                                 value={formData.password}
-                                onChange={(event) => setFormData((current) => ({ ...current, password: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, password: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
@@ -134,7 +159,12 @@ const Register = () => {
                                 type="password"
                                 placeholder="Confirm password"
                                 value={formData.confirmPassword}
-                                onChange={(event) => setFormData((current) => ({ ...current, confirmPassword: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, confirmPassword: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
@@ -143,7 +173,12 @@ const Register = () => {
                             <span className="text-sm font-medium text-slate-300">Role</span>
                             <select
                                 value={formData.role}
-                                onChange={(event) => setFormData((current) => ({ ...current, role: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, role: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Create a profile and enter the matching dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-300 focus:bg-white/10"
                             >
                                 {ROLES.map((role) => (

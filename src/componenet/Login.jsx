@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { getDashboardPath, getStoredAuth, storeAuth } from '../lib/appState';
 
@@ -13,6 +13,16 @@ const Login = () => {
     });
     const [message, setMessage] = useState({ type: 'info', text: 'Sign in to continue to the right dashboard.' });
     const [isLoading, setIsLoading] = useState(false);
+
+    // Auto-clear error and success messages after 5 seconds
+    useEffect(() => {
+        if (message.type === 'error' || message.type === 'success') {
+            const timer = setTimeout(() => {
+                setMessage({ type: 'info', text: 'Sign in to continue to the right dashboard.' });
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
     if (existingAuth) {
         return <Navigate to={getDashboardPath(existingAuth.role)} replace />;
@@ -71,7 +81,12 @@ const Login = () => {
                                 type="email"
                                 placeholder="mail@site.com"
                                 value={formData.email}
-                                onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, email: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Sign in to continue to the right dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
@@ -82,7 +97,12 @@ const Login = () => {
                                 type="password"
                                 placeholder="Password"
                                 value={formData.password}
-                                onChange={(event) => setFormData((current) => ({ ...current, password: event.target.value }))}
+                                onChange={(event) => {
+                                    setFormData((current) => ({ ...current, password: event.target.value }));
+                                    if (message.type === 'error') {
+                                        setMessage({ type: 'info', text: 'Sign in to continue to the right dashboard.' });
+                                    }
+                                }}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:bg-white/10"
                             />
                         </label>
