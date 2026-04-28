@@ -21,7 +21,7 @@
  * - Two-column layout for both roles (left: primary action, right: reference data)
  */
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import {
     clearStoredAuth,
@@ -43,6 +43,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
  */
 const formatDateTime = (value) => {
     const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return 'N/A';
+    }
+
     return new Intl.DateTimeFormat('en-US', {
         weekday: 'short',
         month: 'short',
@@ -50,21 +54,6 @@ const formatDateTime = (value) => {
         hour: 'numeric',
         minute: '2-digit',
     }).format(date);
-};
-
-/**
- * Returns the initial message to display on dashboard load.
- * Varies by user role to provide contextual guidance.
- *
- * @param {string} role - User role ('teacher' or 'student')
- * @returns {Object} Message object with type and text properties
- */
-const getInitialMessage = (role) => {
-    if (role === 'student') {
-        return { type: 'info', text: 'Book an available 15-minute slot to reserve your class time.' };
-    }
-
-    return { type: 'info', text: 'Add a future 15-minute slot to start scheduling.' };
 };
 
 /**
@@ -99,9 +88,11 @@ const App = () => {
     const [isAddingSlot, setIsAddingSlot] = useState(false); // Loading state for add slot button
     const [loadingSlotId, setLoadingSlotId] = useState(null); // Loading state for book slot buttons
     const [isLoggingOut, setIsLoggingOut] = useState(false); // Loading state for logout button
+    const [selectedBookedSlot, setSelectedBookedSlot] = useState(null); // Booked slot shown in the modal
 
     // Calendar ref for handling date selection
     const calendarRef = useRef(null);
+    const bookedSlotModalRef = useRef(null);
 
     // Auth from browser localStorage
     const auth = getStoredAuth();
@@ -140,6 +131,17 @@ const App = () => {
         return () => calendar.removeEventListener('change', handleDateChange);
     }, [message]);
 
+    useEffect(() => {
+        const dialog = bookedSlotModalRef.current;
+        if (!dialog) return;
+
+        if (selectedBookedSlot) {
+            if (!dialog.open) dialog.showModal();
+        } else {
+            if (dialog.open) dialog.close();
+        }
+    }, [selectedBookedSlot]);
+
     /**
      * Fetches slots data from backend based on user role.
      *
@@ -149,7 +151,7 @@ const App = () => {
      *
      * Error handling: Sets error message visible to user if fetch fails
      */
-    const fetchSlots = async () => {
+    const fetchSlots = useCallback(async () => {
         try {
             // Guard against missing auth or activeRole
             if (!auth?.email || !activeRole) {
@@ -199,38 +201,20 @@ const App = () => {
         } catch {
             setMessage({ type: 'error', text: 'Failed to load slots.' });
         }
-    };
-
-    // Initialize message when role changes
-    useEffect(() => {
-        if (activeRole) {
-            setMessage(getInitialMessage(activeRole));
-        }
-    }, [activeRole]);
+    }, [auth?.email, activeRole]);
 
     // Fetch slots when auth or activeRole changes
     useEffect(() => {
-        if (auth && activeRole) {
-            fetchSlots();
+        if (!auth || !activeRole) {
+            return;
         }
-    }, [auth, activeRole]);
 
-    // ==================== AUTHENTICATION GUARDS ====================
+        const timer = setTimeout(() => {
+            void fetchSlots();
+        }, 0);
 
-    // Redirect unauthenticated users to login page
-    if (!auth) {
-        return <Navigate to="/login" replace />;
-    }
-
-    // Redirect to correct dashboard if user tries to access wrong role path
-    if (roleParam && roleParam !== auth.role) {
-        return <Navigate to={getDashboardPath(auth.role)} replace />;
-    }
-
-    // Fallback guard (should not reach without activeRole if auth exists)
-    if (!activeRole) {
-        return <Navigate to={getDashboardPath(auth.role)} replace />;
-    }
+        return () => clearTimeout(timer);
+    }, [auth, activeRole, fetchSlots]);
 
     // ==================== DERIVED STATE & MEMOIZATION ====================
 
@@ -254,6 +238,23 @@ const App = () => {
         () => [...slots].sort((left, right) => new Date(left.start) - new Date(right.start)),
         [slots],
     );
+
+    // ==================== AUTHENTICATION GUARDS ====================
+
+    // Redirect unauthenticated users to login page
+    if (!auth) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Redirect to correct dashboard if user tries to access wrong role path
+    if (roleParam && roleParam !== auth.role) {
+        return <Navigate to={getDashboardPath(auth.role)} replace />;
+    }
+
+    // Fallback guard (should not reach without activeRole if auth exists)
+    if (!activeRole) {
+        return <Navigate to={getDashboardPath(auth.role)} replace />;
+    }
 
     /**
      * Checks if a proposed slot time overlaps with any existing slot.
@@ -455,7 +456,7 @@ const App = () => {
                     </div>
                 </header>
 
-                <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-2xl shadow-slate-950/40 backdrop-blur">
+                <section className="overflow-hidden rounded-4xl border border-white/10 bg-slate-950/70 shadow-2xl shadow-slate-950/40 backdrop-blur">
                     <div className="grid gap-8 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-10">
                         <div className="space-y-6">
                             <span className="inline-flex w-fit items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -496,7 +497,7 @@ const App = () => {
                             </div>
                         </div>
 
-                        <aside className="rounded-[1.75rem] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 via-teal-400/5 to-cyan-400/10 p-6">
+                        <aside className="rounded-[1.75rem] border border-emerald-400/20 bg-linear-to-br from-emerald-400/10 via-teal-400/5 to-cyan-400/10 p-6">
                             <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-200">Today&apos;s flow</p>
                             <div className="mt-5 space-y-4 text-sm leading-6 text-slate-200">
                                 {canManageSlots && (
@@ -590,24 +591,39 @@ const App = () => {
                                         </div>
                                     ) : (
                                         sortedSlots.map((slot) => (
-                                            <article
-                                                key={slot.id}
-                                                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
-                                            >
-                                                <div>
-                                                    <p className="font-medium text-white">{formatDateTime(slot.start)}</p>
-                                                    <p className="mt-1 text-sm text-slate-400">15 minutes long</p>
-                                                    <p className="mt-1 text-sm text-slate-400">Teacher: {slot.creatorName || auth?.name || 'Unassigned'}</p>
-                                                </div>
-                                                <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${slot.status === 'Booked'
-                                                        ? 'bg-slate-200 text-slate-900'
-                                                        : 'bg-emerald-400/15 text-emerald-200'
-                                                        }`}
+                                            slot.status === 'Booked' ? (
+                                                <button
+                                                    key={slot.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedBookedSlot(slot)}
+                                                    className="flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/10"
                                                 >
-                                                    {slot.status}
-                                                </span>
-                                            </article>
+                                                    <div>
+                                                        <p className="font-medium text-white">{formatDateTime(slot.start)}</p>
+                                                        <p className="mt-1 text-sm text-slate-400">15 minutes long</p>
+                                                        <p className="mt-1 text-sm text-slate-400">Teacher: {slot.creatorName || auth?.name || 'Unassigned'}</p>
+                                                    </div>
+                                                    <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-900">
+                                                        {slot.status}
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <article
+                                                    key={slot.id}
+                                                    className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
+                                                >
+                                                    <div>
+                                                        <p className="font-medium text-white">{formatDateTime(slot.start)}</p>
+                                                        <p className="mt-1 text-sm text-slate-400">15 minutes long</p>
+                                                        <p className="mt-1 text-sm text-slate-400">Teacher: {slot.creatorName || auth?.name || 'Unassigned'}</p>
+                                                    </div>
+                                                    <span
+                                                        className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-200"
+                                                    >
+                                                        {slot.status}
+                                                    </span>
+                                                </article>
+                                            )
                                         ))
                                     )}
                                 </div>
@@ -676,9 +692,11 @@ const App = () => {
                                         </div>
                                     ) : (
                                         sortedBookedSlots.map((slot) => (
-                                            <article
+                                            <button
                                                 key={slot.id}
-                                                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
+                                                type="button"
+                                                onClick={() => setSelectedBookedSlot(slot)}
+                                                className="flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/10"
                                             >
                                                 <div>
                                                     <p className="font-medium text-white">{formatDateTime(slot.start)}</p>
@@ -687,7 +705,7 @@ const App = () => {
                                                 <span className={`rounded-full ${slot.start <= new Date().toISOString() ? 'bg-red-200' : 'bg-cyan-400'} px-3 py-1 text-xs font-semibold text-slate-900`}>
                                                     {slot.start <= new Date().toISOString() ? 'Past' : 'Upcoming'}
                                                 </span>
-                                            </article>
+                                            </button>
                                         ))
                                     )}
                                 </div>
@@ -695,6 +713,47 @@ const App = () => {
                         </>
                     )}
                 </div>
+
+                <dialog
+                    ref={bookedSlotModalRef}
+                    className="modal"
+                    onClose={() => setSelectedBookedSlot(null)} // This is the core fix
+                >
+                    <div className="modal-box border border-white/10 bg-slate-950 text-white shadow-2xl">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 className="text-xl font-semibold">Booked slot details</h3>
+                                <p className="mt-1 text-sm text-slate-400">Information about this reserved slot.</p>
+                            </div>
+                            <form method="dialog">
+                                <button className="rounded-full bg-white/5 px-3 py-1 text-sm font-semibold text-slate-200 transition hover:bg-white/10">
+                                    Close
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* We use optional chaining and conditional logic inside the div to prevent content flashing */}
+                        <div className="mt-6 space-y-4 text-sm text-slate-300">
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Booked by</p>
+                                <p className="mt-1 font-medium text-white">{selectedBookedSlot?.bookedBy || 'Loading...'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Slot time</p>
+                                <p className="mt-1 font-medium text-white">{formatDateTime(selectedBookedSlot?.start)}</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Booked at</p>
+                                <p className="mt-1 font-medium text-white">
+                                    {selectedBookedSlot?.bookedAt ? new Date(selectedBookedSlot.bookedAt).toLocaleString() : 'N/A'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <form method="dialog" className="modal-backdrop">
+                        <button type="submit">close</button>
+                    </form>
+                </dialog>
             </div>
         </main>
     );
